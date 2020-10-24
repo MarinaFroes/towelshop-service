@@ -13,7 +13,7 @@ export const googleCallback = (req: Request, res: Response) => {
     const token = generateToken(user._id)
     token && res.cookie('token', token)
     
-    res.status(200).redirect('/api/v1/products')
+    res.redirect('https://sharp-curie-5f9df0.netlify.app/login')
   } else {
     res.status(401).send('Unauthorized')
   }
