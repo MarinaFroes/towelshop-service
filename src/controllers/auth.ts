@@ -24,5 +24,5 @@ export const googleCallback = (req: Request, res: Response) => {
 // @access Public
 export const logoutUser = (req: Request, res: Response) => {
   req.logout()
-  res.redirect('/')
+  res.status(200).send('Logged out')
 }
