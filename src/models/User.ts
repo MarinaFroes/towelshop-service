@@ -1,6 +1,12 @@
 import mongoose, { Document, HookNextFunction } from 'mongoose'
 import bcrypt from 'bcrypt'
 
+import {
+  nameValidator,
+  emailValidator,
+  passwordValidator,
+} from '../util/validators'
+
 export type UserDocument = Document & {
   googleId?: string;
   image?: string;
@@ -16,25 +22,36 @@ export type UserDocument = Document & {
 
 const userSchema = new mongoose.Schema(
   {
-    userName: String,
+    userName: {
+      type: String,
+      validate: nameValidator,
+    },
     googleId: String,
     image: String,
-    firstName: String,
-    lastName: String,
+    firstName: {
+      type: String,
+      validate: nameValidator,
+    },
+    lastName: {
+      type: String,
+      validate: nameValidator,
+    },
     email: {
       type: String,
       required: true,
       unique: true,
+      validate: emailValidator,
     },
     password: {
       type: String,
       select: false,
+      validate: passwordValidator,
     },
     role: {
       type: String,
       required: true,
       default: 'user',
-      enum: ['user', 'admin', 'root'],
+      enum: ['user', 'admin'],
     },
     isBanned: {
       type: Boolean,
@@ -47,11 +64,16 @@ const userSchema = new mongoose.Schema(
   }
 )
 
-userSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
+userSchema.methods.matchPassword = async function (
+  enteredPassword: string
+): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password)
 }
 
-userSchema.pre('save', async function (this: UserDocument, next: HookNextFunction) {
+userSchema.pre('save', async function (
+  this: UserDocument,
+  next: HookNextFunction
+) {
   if (!this.isModified('password')) {
     next()
   }

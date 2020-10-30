@@ -6,11 +6,11 @@ import {
   NotFoundError,
   BadRequestError,
   InternalServerError,
-  ForbiddenError
+  ForbiddenError,
 } from '../helpers/apiError'
 
 // @desc   Create new user
-// @route  POST /api/users/signup
+// @route  POST /api/v1/users/signup
 // @access Public
 export const createUser = async (
   req: Request,
@@ -18,9 +18,20 @@ export const createUser = async (
   next: NextFunction
 ) => {
   try {
-    const { userName, firstName, lastName, email, password } = req.body
+    const { userName, firstName, lastName, email, password, role } = req.body
 
-    const createdUser = await UserService.create(userName, firstName, lastName, email, password )
+    if (!email || !password) {
+      next(new BadRequestError('Required fields missing'))
+    }
+
+    const createdUser = await UserService.create(
+      userName,
+      firstName,
+      lastName,
+      email,
+      password,
+      role
+    )
 
     if (createdUser) {
       const authedUser = {
@@ -29,15 +40,15 @@ export const createUser = async (
         firstName,
         lastName,
         email,
-        token: generateToken(createdUser._id)
+        role: createdUser.role,
+        isBanned: createdUser.isBanned,
+        token: generateToken(createdUser._id),
       }
       res.json(authedUser)
     } else {
       next(new InternalServerError('Could not create user'))
     }
-    
   } catch (error) {
-    console.error(error)
     if (error.name === 'ValidationError') {
       next(new BadRequestError('Invalid Request', error))
     } else {
@@ -47,7 +58,7 @@ export const createUser = async (
 }
 
 // @desc   Update user
-// @route  PUT /users/:userId
+// @route  PUT api/v1/users/:userId
 // @access Private
 export const updateUser = async (
   req: Request,
@@ -57,16 +68,25 @@ export const updateUser = async (
   try {
     const update = req.body
     const userId = req.params.userId
-   
+
     const updatedUser = await UserService.update(userId, update)
+
+    if (!updatedUser) {
+      next(new NotFoundError('User not found'))
+    }
+
     res.json(updatedUser)
   } catch (error) {
-    next(new NotFoundError('User not found', error))
+    if (error.name === 'CastError') {
+      next(new BadRequestError('User id is invalid', error))
+    } else {
+      next(new InternalServerError('Internal Server Error', error))
+    }
   }
 }
 
 // @desc   Delete user
-// @route  DELETE /users/:userId
+// @route  DELETE api/v1/users/:userId
 // @access Private
 export const deleteUser = async (
   req: Request,
@@ -82,7 +102,7 @@ export const deleteUser = async (
 }
 
 // @desc   Get single user
-// @route  GET /users/:userId
+// @route  GET api/v1/users/:userId
 // @access Private
 export const findById = async (
   req: Request,
@@ -90,14 +110,20 @@ export const findById = async (
   next: NextFunction
 ) => {
   try {
-    res.json(await UserService.findById(req.params.userId))
+    const user = await UserService.findById(req.params.userId)
+
+    if (!user) {
+      next(new NotFoundError('User not found'))
+    }
+
+    res.json(user)
   } catch (error) {
-    next(new NotFoundError('User not found', error))
+    next(new InternalServerError('Internal Server Error', error))
   }
 }
 
 // @desc   Get a list of all users
-// @route  GET /users
+// @route  GET api/v1/users
 // @access Private, Role Admin
 export const findAll = async (
   req: Request,
@@ -112,7 +138,7 @@ export const findAll = async (
 }
 
 // @desc   Unban user
-// @route  POST /users/:userId/unban-user
+// @route  POST api/v1/users/:userId/unban-user
 // @access Private, Role Admin
 export const unbanUser = async (
   req: Request,
@@ -128,7 +154,7 @@ export const unbanUser = async (
 }
 
 // @desc   Ban user
-// @route  POST /users/:userId/ban-user
+// @route  POST api/v1/users/:userId/ban-user
 // @access Private, Role Admin
 export const banUser = async (
   req: Request,
@@ -144,7 +170,7 @@ export const banUser = async (
 }
 
 // @desc   Auth user
-// @route  POST /users/login
+// @route  POST api/v1/users/login
 // @access Public
 export const authUser = async (
   req: Request,
@@ -155,29 +181,32 @@ export const authUser = async (
     const { email, password } = req.body
 
     const user = await UserService.authenticate(email, password)
-    
-    const { _id, firstName, lastName, userName, role, isBanned } = user
 
-    const authedUser = {
-      _id,
-      userName, 
-      firstName,
-      lastName,
-      email,
-      role, 
-      isBanned,
-      token: generateToken(_id)
-    }
+    if (!user) {
+      next(new NotFoundError('User with these credentials not found'))
+    } else {
+      const { _id, firstName, lastName, userName, role, isBanned } = user
 
-    if (isBanned) {
-      next(new ForbiddenError('User is banned. Cannot login in.'))
+      const authedUser = {
+        _id,
+        userName,
+        firstName,
+        lastName,
+        email,
+        role,
+        isBanned,
+        token: generateToken(_id),
+      }
+
+      if (isBanned) {
+        next(new ForbiddenError('User is banned. Cannot login in.'))
+      }
+
+      if (!isBanned && user) {
+        res.status(200).json(authedUser)
+      }
     }
-    
-    if (!isBanned && user) {
-      res.status(200).json(authedUser)
-    }
-  
-  } catch (err) {
-    next(new NotFoundError('User not found', err))
+  } catch (error) {
+    next(new InternalServerError('Internal Server Error', error))
   }
 }

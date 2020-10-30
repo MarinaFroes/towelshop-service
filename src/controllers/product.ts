@@ -8,8 +8,8 @@ import {
   InternalServerError,
 } from '../helpers/apiError'
 
-// @desc   Create product
-// @route  POST /products
+// @desc   Create new product
+// @route  POST /api/v1/products
 // @access Private, role admin
 export const createProduct = async (
   req: Request,
@@ -25,10 +25,10 @@ export const createProduct = async (
       size,
       price,
       mediaUrl,
-      countInStock
+      countInStock,
     } = req.body
 
-    const product = new Product({
+    let product = new Product({
       name,
       description,
       categories,
@@ -36,10 +36,11 @@ export const createProduct = async (
       size,
       price,
       mediaUrl,
-      countInStock
+      countInStock,
     })
 
-    await ProductService.create(product)
+    product = await ProductService.create(product)
+
     res.json(product)
   } catch (error) {
     if (error.name === 'ValidationError') {
@@ -51,7 +52,7 @@ export const createProduct = async (
 }
 
 // @desc   Update product
-// @route  PUT /products/:productId
+// @route  PUT api/v1/products/:productId
 // @access Private, role admin
 export const updateProduct = async (
   req: Request,
@@ -63,14 +64,23 @@ export const updateProduct = async (
     const productId = req.params.productId
 
     const updatedProduct = await ProductService.update(productId, update)
+
+    if (!updatedProduct) {
+      next(new NotFoundError('Product not found'))
+    }
+
     res.json(updatedProduct)
   } catch (error) {
-    next(new NotFoundError('Product not found', error))
+    if (error.name === 'CastError') {
+      next(new BadRequestError('Product id is invalid', error))
+    } else {
+      next(new InternalServerError('Internal Server Error', error))
+    }
   }
 }
 
 // @desc   Delete product
-// @route  DELETE /products/:productId
+// @route  DELETE api/v1/products/:productId
 // @access Private, role admin
 export const deleteProduct = async (
   req: Request,
@@ -86,7 +96,7 @@ export const deleteProduct = async (
 }
 
 // @desc   Get single product
-// @route  GET /products/:productId
+// @route  GET api/v1/products/:productId
 // @access Public
 export const findById = async (
   req: Request,
@@ -94,14 +104,20 @@ export const findById = async (
   next: NextFunction
 ) => {
   try {
-    res.json(await ProductService.findById(req.params.productId))
+    const product = await ProductService.findById(req.params.productId)
+
+    if (!product) {
+      throw new Error()
+    }
+
+    res.json(product)
   } catch (error) {
-    next(new NotFoundError('Product not found', error))
+    next(new NotFoundError('Product not found'))
   }
 }
 
 // @desc   Get all products with pagination
-// @route  GET /products
+// @route  GET api/v1/products
 // @access Public
 export const findPaginated = async (
   req: Request,
@@ -110,14 +126,14 @@ export const findPaginated = async (
 ) => {
   try {
     const pageData = await ProductService.findPaginated(req.query)
-    res.json({...pageData})
+    res.json({ ...pageData })
   } catch (error) {
     next(new NotFoundError('Products not found', error))
   }
 }
 
 // @desc   Get all products no pagination
-// @route  GET /products/all
+// @route  GET api/v1/products/all
 // @access Public
 export const findAll = async (
   req: Request,

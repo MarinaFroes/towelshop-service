@@ -1,121 +1,81 @@
-import isEmail from 'validator/lib/isEmail'
-import isLength from 'validator/lib/isLength'
-
 import User, { UserDocument } from '../models/User'
+import Cart from '../models/Cart'
 
-// FIXME: REFACTOR TO USE ONLY ASYNC AWAIT HERE 
-async function create(userName: string, firstName: string, lastName: string, email: string, password: string): Promise<UserDocument> {
-
-  if (!userName || !firstName || !lastName || !email || !password) {
-    throw new Error('One or more required fields missing')
-  }
-
-  if (
-    !isLength(userName, { min: 3, max: 20 }) ||
-    !isLength(firstName, { min: 3, max: 20 }) ||
-    !isLength(lastName, { min: 3, max: 20 })
-  ) {
-    throw new Error('Name must be 3-20 characters long')
-  } else if (!isLength(password, { min: 6 })) {
-    throw new Error('Password must be at least 6 characters long')
-    
-  } else if (!isEmail(email)) {
-    throw new Error('Email must be valid')
-  }
-
-  const existingUser = await User.findOne({ email })
-  if (existingUser) {
-    throw new Error(`User already exists with email ${email}`)
-  }
-
-  const newUser = new User({
+const create = async (
+  userName: string,
+  firstName: string,
+  lastName: string,
+  email: string,
+  password: string,
+  role?: string
+) => {
+  const newUser = await new User({
     userName,
     firstName,
     lastName,
     email,
     password,
-  })
+    role,
+  }).save()
 
-  const createdUser = await User.create(newUser)
+  await new Cart({ user: newUser._id }).save()
 
-  return createdUser
+  return newUser
 }
 
-function findById(userId: string): Promise<UserDocument> {
-  return User.findById(userId)
-    .exec()
-    .then((user) => {
-      if (!user) {
-        throw new Error(`User ${userId} not found`)
-      }
-      return user
-    })
+const findById = async (userId: string) => {
+  return await User.findById(userId)
 }
 
-function authenticate(
-  email: string,
-  enteredPassword: string
-): Promise<UserDocument> {
-  return User.findOne({ email })
-    .select('+password')
-    .exec()
-    .then((user) => {
-      if (!user) {
-        throw new Error('User not found')
-      } else {
-        return user.matchPassword(enteredPassword).then(isMatch => {
-          if (isMatch) {
-            return user
-          } else {
-            throw new Error('Passwords do not match')
-          }
-        })
-      }
-    })
+const authenticate = async (email: string, enteredPassword: string) => {
+  const user = await User.findOne({ email }).select('+password')
+
+  let isMatch = false
+
+  if (user) {
+    isMatch = await user.matchPassword(enteredPassword)
+  }
+
+  return user && isMatch ? user : null
 }
 
-function findAll(): Promise<UserDocument[]> {
-  return User.find().sort({ lastName: 1 }).exec()
+const findAll = async () => {
+  return await User.find().sort({ lastName: 1 })
 }
 
-function update(
-  userId: string,
-  update: Partial<UserDocument>
-): Promise<UserDocument> {
-  return User.findById(userId)
-    .exec()
-    .then((user) => {
-      if (!user) {
-        throw new Error(`User ${userId} not found`)
-      }
+const update = async (userId: string, update: Partial<UserDocument>) => {
+  const user = await User.findById(userId)
 
-      if (update.userName) {
-        user.userName = update.userName
-      }
-      if (update.firstName) {
-        user.firstName = update.firstName
-      }
-      if (update.lastName) {
-        user.lastName = update.lastName
-      }
-      if (update.email) {
-        user.email = update.email
-      }
+  if (!user) {
+    return null
+  }
 
-      return user.save()
-    })
+  if (update.userName) {
+    user.userName = update.userName
+  }
+  if (update.firstName) {
+    user.firstName = update.firstName
+  }
+  if (update.lastName) {
+    user.lastName = update.lastName
+  }
+  if (update.email) {
+    user.email = update.email
+  }
+
+  return await user.save()
 }
 
-function deleteUser(userId: string): Promise<UserDocument | null> {
-  return User.findByIdAndDelete(userId).exec()
+const deleteUser = async (userId: string) => {
+  return await User.findByIdAndDelete(userId)
 }
 
-function ban(userId: string): Promise<UserDocument | null> {
-  return User.findByIdAndUpdate({ _id: userId }, { isBanned: true }).exec()
+const ban = async (userId: string) => {
+  return await User.findByIdAndUpdate({ _id: userId }, { isBanned: true })
 }
 
-function unban(userId: string): Promise<UserDocument | null> {
-  return User.findOneAndUpdate({ _id: userId }, { isBanned: false }).exec()
+const unban = async (userId: string) => {
+  return await User.findByIdAndUpdate({ _id: userId }, { isBanned: false })
 }
 
 export default {

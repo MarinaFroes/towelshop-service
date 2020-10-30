@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema({
   name: {
     type: String,
     index: true,
-    required: [true, 'Name is required'],
+    required: true,
   },
   price: {
     type: Number,
@@ -28,7 +28,7 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
+    required: true,
   },
   categories: [String],
   variant: String,
