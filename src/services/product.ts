@@ -28,20 +28,23 @@ const findPaginated = async (query: Query) => {
     .skip(skips)
     .limit(productsPerPage)
     .sort({ name: 1 })
-
+  
   return {
     items: products,
     totalPages,
-  }
+  } 
 }
 
 const findAll = async () => {
   return await Product.find().sort({ name: 1 })
 }
 
-const update = async (productId: string, update: Partial<ProductDocument>) => {
-  const product = await Product.findById(productId)
-
+const update = async (
+  productId: string,
+  update: Partial<ProductDocument>
+) => {
+  const product = await  Product.findById(productId)
+  
   if (!product) {
     return null
   }

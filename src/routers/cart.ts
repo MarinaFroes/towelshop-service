@@ -4,15 +4,14 @@ import {
   addProduct,
   getCart,
   removeProduct,
-  findAll,
+  findAll
 } from '../controllers/cart'
 import checkAuth from '../middlewares/checkAuth'
 import checkRole from '../middlewares/checkRole'
 
 const router = express.Router()
 
-router
-  .route('/')
+router.route('/')
   .get([checkAuth], getCart)
   .put([checkAuth], addProduct)
   .delete([checkAuth], removeProduct)

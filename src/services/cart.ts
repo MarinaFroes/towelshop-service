@@ -1,5 +1,6 @@
-import Cart, { CartDocument } from '../models/Cart'
 import mongoose from 'mongoose'
+
+import Cart, { CartDocument } from '../models/Cart'
 import '../models/Product'
 
 const { ObjectId } = mongoose.Types
@@ -11,22 +12,20 @@ const findAll = async () => {
 const findByUserId = async (userId: string) => {
   return await Cart.findOne({ user: userId }).populate({
     path: 'products.product',
-    model: 'Product',
+    model: 'Product'
   })
 }
 
 const update = async (userId: string, productId: string, qty: number) => {
   const cart: CartDocument | null = await Cart.findOne({ user: userId })
-
+  
   let updatedCart
 
   if (!cart) {
     return null
   }
 
-  const productExists: boolean = cart.products.some((doc) =>
-    ObjectId(productId).equals(doc.product)
-  )
+  const productExists: boolean = cart.products.some((doc) => ObjectId(productId).equals(doc.product)) 
 
   if (productExists) {
     updatedCart = await Cart.findOneAndUpdate(
@@ -35,8 +34,9 @@ const update = async (userId: string, productId: string, qty: number) => {
       { new: true }
     ).populate({
       path: 'products.product',
-      model: 'Product',
+      model: 'Product'
     })
+
   } else {
     const newProduct = { quantity: qty, product: productId }
 
@@ -46,7 +46,7 @@ const update = async (userId: string, productId: string, qty: number) => {
       { new: true }
     ).populate({
       path: 'products.product',
-      model: 'Product',
+      model: 'Product'
     })
   }
 
@@ -60,7 +60,7 @@ const deleteProduct = async (userId: string, productId: string) => {
     { new: true }
   ).populate({
     path: 'products.product',
-    model: 'Product',
+    model: 'Product'
   })
 
   if (!cart) {
@@ -74,5 +74,5 @@ export default {
   findByUserId,
   update,
   deleteProduct,
-  findAll,
+  findAll
 }

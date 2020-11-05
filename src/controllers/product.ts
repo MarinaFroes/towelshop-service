@@ -25,7 +25,7 @@ export const createProduct = async (
       size,
       price,
       mediaUrl,
-      countInStock,
+      countInStock
     } = req.body
 
     let product = new Product({
@@ -36,7 +36,7 @@ export const createProduct = async (
       size,
       price,
       mediaUrl,
-      countInStock,
+      countInStock
     })
 
     product = await ProductService.create(product)
@@ -126,7 +126,7 @@ export const findPaginated = async (
 ) => {
   try {
     const pageData = await ProductService.findPaginated(req.query)
-    res.json({ ...pageData })
+    res.json({...pageData})
   } catch (error) {
     next(new NotFoundError('Products not found', error))
   }

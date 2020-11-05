@@ -2,7 +2,7 @@ import isEmail from 'validator/lib/isEmail'
 import isLength from 'validator/lib/isLength'
 
 export const nameValidator = (value: string) => {
-  return isLength(value, { min: 3, max: 20 })
+  return isLength(value, { min: 3, max: 50 })
 }
 
 export const emailValidator = (email: string) => {

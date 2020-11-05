@@ -36,7 +36,7 @@ export const addProduct = async (
     const { productId, qty } = req.body
 
     const user: UserDocument = req.user as UserDocument
-
+    
     if (!productId || !qty) {
       next(new BadRequestError('Product id or quantity missing'))
     }
@@ -44,9 +44,11 @@ export const addProduct = async (
     if (user && user._id) {
       const updatedCart = await CartService.update(user._id, productId, qty)
       res.status(200).json(updatedCart)
+
     } else {
       next(new UnauthorizedError('Login to see cart'))
     }
+    
   } catch (error) {
     next(new NotFoundError('Cart not found', error))
   }
@@ -71,6 +73,7 @@ export const removeProduct = async (
     } else {
       next(new UnauthorizedError('Login to see cart'))
     }
+    
   } catch (error) {
     next(new InternalServerError('Could not remove product', error))
   }
@@ -93,6 +96,7 @@ export const getCart = async (
     } else {
       next(new UnauthorizedError('Login to see cart'))
     }
+    
   } catch (error) {
     next(new NotFoundError('Cart not found', error))
   }

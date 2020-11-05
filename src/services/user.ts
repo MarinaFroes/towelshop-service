@@ -9,13 +9,14 @@ const create = async (
   password: string,
   role?: string
 ) => {
+
   const newUser = await new User({
     userName,
     firstName,
     lastName,
     email,
     password,
-    role,
+    role
   }).save()
 
   await new Cart({ user: newUser._id }).save()
@@ -24,17 +25,20 @@ const create = async (
 }
 
 const findById = async (userId: string) => {
-  return await User.findById(userId)
+  return await User.findById(userId)   
 }
 
-const authenticate = async (email: string, enteredPassword: string) => {
+const authenticate = async (
+  email: string,
+  enteredPassword: string
+) => {
   const user = await User.findOne({ email }).select('+password')
 
   let isMatch = false
 
   if (user) {
     isMatch = await user.matchPassword(enteredPassword)
-  }
+  } 
 
   return user && isMatch ? user : null
 }
@@ -43,9 +47,12 @@ const findAll = async () => {
   return await User.find().sort({ lastName: 1 })
 }
 
-const update = async (userId: string, update: Partial<UserDocument>) => {
+const update = async (
+  userId: string,
+  update: Partial<UserDocument>
+) => {
   const user = await User.findById(userId)
-
+    
   if (!user) {
     return null
   }

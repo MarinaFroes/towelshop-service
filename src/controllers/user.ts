@@ -6,7 +6,7 @@ import {
   NotFoundError,
   BadRequestError,
   InternalServerError,
-  ForbiddenError,
+  ForbiddenError
 } from '../helpers/apiError'
 
 // @desc   Create new user
@@ -24,14 +24,7 @@ export const createUser = async (
       next(new BadRequestError('Required fields missing'))
     }
 
-    const createdUser = await UserService.create(
-      userName,
-      firstName,
-      lastName,
-      email,
-      password,
-      role
-    )
+    const createdUser = await UserService.create(userName, firstName, lastName, email, password, role )
 
     if (createdUser) {
       const authedUser = {
@@ -42,14 +35,15 @@ export const createUser = async (
         email,
         role: createdUser.role,
         isBanned: createdUser.isBanned,
-        token: generateToken(createdUser._id),
+        token: generateToken(createdUser._id)
       }
       res.json(authedUser)
     } else {
       next(new InternalServerError('Could not create user'))
     }
+    
   } catch (error) {
-    if (error.name === 'ValidationError') {
+    if (error.name === 'ValidationError' || error.name === 'ValidatorError') {
       next(new BadRequestError('Invalid Request', error))
     } else {
       next(new InternalServerError('Internal Server Error', error))
@@ -68,7 +62,7 @@ export const updateUser = async (
   try {
     const update = req.body
     const userId = req.params.userId
-
+   
     const updatedUser = await UserService.update(userId, update)
 
     if (!updatedUser) {
@@ -184,28 +178,30 @@ export const authUser = async (
 
     if (!user) {
       next(new NotFoundError('User with these credentials not found'))
+
     } else {
       const { _id, firstName, lastName, userName, role, isBanned } = user
 
       const authedUser = {
         _id,
-        userName,
+        userName, 
         firstName,
         lastName,
         email,
-        role,
+        role, 
         isBanned,
-        token: generateToken(_id),
+        token: generateToken(_id)
       }
 
       if (isBanned) {
         next(new ForbiddenError('User is banned. Cannot login in.'))
       }
-
+      
       if (!isBanned && user) {
         res.status(200).json(authedUser)
       }
     }
+    
   } catch (error) {
     next(new InternalServerError('Internal Server Error', error))
   }
