@@ -23,7 +23,7 @@ mongoose.Promise = bluebird
 connectDb()
 
 // Express configuration
-app.set('port', process.env.PORT || 3000)
+app.set('port', process.env.PORT || 5000)
 
 // Use common 3rd-party middlewares
 app.use(compression())

@@ -1,11 +1,13 @@
-FROM node:12.0
+FROM node:12.19.0-alpine3.10
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY package*.json ./
 
 COPY . .
 
-RUN npm install
+RUN npm install --silent
+
+EXPOSE 5000
 
 CMD [ "npm", "run", "watch" ]
