@@ -6,8 +6,8 @@ COPY package*.json ./
 
 COPY . .
 
-RUN npm install --silent
+RUN npm install --silent --only=prod
 
 EXPOSE 5000
 
-CMD [ "npm", "run", "watch" ]
+CMD [ "npm", "start" ]
